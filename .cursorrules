@@ -1,0 +1,126 @@
+# AI Summarizer Project Rules
+
+# Component File Structure
+- React components should be in `src/components/`
+- Auth-related components should be in `src/components/auth/`
+- Each component should have its own folder named after the component (PascalCase)
+  - Component file should be named `index.tsx`
+  - Component styles should be in `styles.ts` or `styles.module.css` in the same folder
+  - Component tests should be in `__tests__` folder or named `ComponentName.test.tsx`
+- Use functional components with React.FC type
+- Add displayName property to each component
+
+# TypeScript
+- Use TypeScript for all new files
+- Prefer interfaces over types for object definitions (especially for props and states)
+- Define inline types for simple unions or literals within the component file
+- Create separate interface files for shared types in `src/types/` directory
+- Never use `any` type; use `unknown` if type is truly unknown
+- Export interfaces that are used by multiple components
+- Use Pick<> and Omit<> utilities to create new interfaces from existing ones
+- Use readonly for immutable properties
+- Define proper return types for all functions
+
+# Styling
+- Use Tailwind CSS for styling
+- For complex components:
+  - Create a separate `styles.ts` file in the component folder
+  - Export constant objects with tailwind class strings
+- Keep all global CSS in `src/App.css` or `src/index.css`
+- Use responsive design patterns with mobile-first approach
+- Use CSS variables for theme colors and spacing when appropriate
+- Implement dark mode support using Tailwind's dark mode utilities
+
+# State Management
+- Use React Context API for global state that spans multiple components
+- Use useState for simple component-level state
+- Use useReducer for complex component-level state
+- Keep state as close as possible to where it's used
+- Use custom hooks to abstract reusable stateful logic
+
+# Imports
+- Group imports in the following order with a blank line between groups:
+  1. React/core libraries
+  2. Third-party libraries
+  3. Components
+  4. Interfaces/types
+  5. Utilities/hooks
+  6. Assets/styles
+- Use absolute imports from src root (e.g., `import Button from 'components/Button'`)
+- Avoid relative imports with multiple levels (../../)
+
+# Code Style
+- Use 2 spaces for indentation
+- Use single quotes for strings
+- Use template literals for string concatenation
+- Use semicolons at the end of statements
+- Use camelCase for variables, functions, methods, and instances
+- Use PascalCase for components, interfaces, classes, and type aliases
+- Use ALL_CAPS for constants that never change
+- Keep line length under 100 characters
+- Use trailing commas in multi-line objects and arrays
+- Prefer object destructuring for props and state
+- Use optional chaining (?.) and nullish coalescing (??) operators
+
+# Component Structure
+- Group state declarations at the beginning of components
+- Destructure props at the beginning of the component
+- Define helper functions inside useCallback when they depend on props or state
+- Organize event handlers after state declarations
+- Place useEffect hooks after event handlers
+- Extract complex logic into separate utility functions
+- Keep components focused on a single responsibility
+- Use custom hooks for shared functionality
+
+# Form Handling
+- Use controlled components for form inputs
+- Group form state in a single state object when possible
+- Create a custom hook for form logic when forms are complex
+- Implement proper form validation with error messages
+- Provide clear visual feedback for form errors
+- Use form libraries like Formik or react-hook-form for complex forms
+
+# Comments
+- Add JSDoc comments for all functions with parameters and return types
+- Document complex business logic with clear explanations
+- Avoid obvious comments
+- Use TODOs for future improvements, include ticket numbers when appropriate
+- Comment code that isn't immediately obvious in its purpose
+
+# Testing
+- Write tests for all components
+- Use React Testing Library over Enzyme
+- Test component rendering, interactions, and edge cases
+- Use descriptive test names following "it should..." pattern
+- Test accessibility with appropriate tools
+- Use mock functions for API calls and complex dependencies
+
+# File Organization
+- Keep related files close together in component folders
+- Use index.ts files for clean exports
+- Use barrel exports for related components
+- Organize routes in a dedicated `routes` or `pages` directory
+
+# Performance
+- Use React.memo for components that render often and rely on referential equality
+- Use useMemo for expensive calculations
+- Use useCallback for event handlers passed to child components
+- Virtualize long lists with react-window or similar libraries
+- Implement code splitting with React.lazy and Suspense
+- Use appropriate keys for lists
+
+# Accessibility
+- Use semantic HTML elements
+- Include proper ARIA attributes when necessary
+- Ensure keyboard navigation works for all interactive elements
+- Maintain sufficient color contrast (4.5:1 minimum)
+- Implement focus indicators for keyboard users
+- Test with screen readers
+
+# Error Handling
+- Implement error boundaries at appropriate component levels
+- Create a consistent error UI component
+- Handle API errors gracefully with user-friendly messages
+- Log errors to monitoring services in production
+- Provide fallback content when components fail
+- Use try/catch for error-prone operations 
