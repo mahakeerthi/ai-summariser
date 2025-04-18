@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getCurrentUser } from '../../../utils/storage';
 import DashboardLayout from '../../layout/DashboardLayout';
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const currentUser = getCurrentUser();
 
   return (
@@ -11,7 +12,7 @@ const Dashboard: React.FC = () => {
         {/* Welcome section */}
         <div className="bg-white shadow rounded-lg p-6">
           <h1 className="text-2xl font-semibold text-gray-900">
-            Welcome back, {currentUser?.email}
+            Welcome back {currentUser?.email}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
             Here's what you can do with AI Summarizer
@@ -57,15 +58,15 @@ const Dashboard: React.FC = () => {
                 <p className="mt-1 text-sm text-gray-500">
                   View your recently generated summaries
                 </p>
-                <button
+                <Link
+                  to="/dashboard/summaries"
                   className="mt-4 inline-flex items-center text-sm font-medium text-black hover:text-gray-700"
-                  onClick={() => {/* TODO: Implement recent summaries view */}}
                 >
                   View all
                   <svg className="ml-1 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -85,7 +86,7 @@ const Dashboard: React.FC = () => {
                 </p>
                 <button
                   className="mt-4 inline-flex items-center text-sm font-medium text-black hover:text-gray-700"
-                  onClick={() => {/* TODO: Implement settings view */}}
+                  onClick={() => navigate('/dashboard/settings')}
                 >
                   Manage
                   <svg className="ml-1 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

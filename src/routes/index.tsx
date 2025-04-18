@@ -3,6 +3,7 @@ import Login from '../components/auth/Login';
 import SignUp from '../components/auth/SignUp';
 import Dashboard from '../components/dashboard/Dashboard';
 import Upload from '../components/dashboard/Upload';
+import Summaries from '../components/dashboard/Summaries';
 import { getCurrentUser } from '../utils/storage';
 
 // Protected Route wrapper
@@ -61,6 +62,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Upload />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dashboard/summaries',
+    element: (
+      <ProtectedRoute>
+        <Summaries />
       </ProtectedRoute>
     ),
   },

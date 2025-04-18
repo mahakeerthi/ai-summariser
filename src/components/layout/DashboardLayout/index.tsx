@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { getCurrentUser } from '../../../utils/storage';
 
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const currentUser = getCurrentUser();
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
@@ -17,6 +18,22 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
     navigate('/login');
   };
 
+  const getNavLinkClass = (isActive: boolean) => {
+    return `inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium ${
+      isActive
+        ? 'border-black text-gray-900'
+        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+    }`;
+  };
+
+  const getMobileNavLinkClass = (isActive: boolean) => {
+    return `block border-l-4 py-2 pl-3 pr-4 text-base font-medium ${
+      isActive
+        ? 'border-black bg-gray-50 text-gray-900'
+        : 'border-transparent text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700'
+    }`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
@@ -25,21 +42,30 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
           <div className="flex h-16 justify-between">
             <div className="flex">
               <div className="flex flex-shrink-0 items-center">
-                <span className="text-2xl font-bold text-black">AI Summarizer</span>
+                <Link to="/dashboard" className="text-2xl font-bold text-black">
+                  AI Summarizer
+                </Link>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
+                <NavLink
                   to="/dashboard"
-                  className="inline-flex items-center border-b-2 border-black px-1 pt-1 text-sm font-medium text-gray-900"
+                  className={({ isActive }) => getNavLinkClass(isActive)}
+                  end
                 >
                   Dashboard
-                </Link>
-                <Link
+                </NavLink>
+                <NavLink
                   to="/dashboard/upload"
-                  className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  className={({ isActive }) => getNavLinkClass(isActive)}
                 >
                   Upload
-                </Link>
+                </NavLink>
+                <NavLink
+                  to="/dashboard/summaries"
+                  className={({ isActive }) => getNavLinkClass(isActive)}
+                >
+                  Summaries
+                </NavLink>
               </div>
             </div>
 
@@ -108,18 +134,25 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         {isProfileDropdownOpen && (
           <div className="sm:hidden">
             <div className="space-y-1 pb-3 pt-2">
-              <Link
+              <NavLink
                 to="/dashboard"
-                className="block border-l-4 border-black bg-gray-50 py-2 pl-3 pr-4 text-base font-medium text-gray-900"
+                className={({ isActive }) => getMobileNavLinkClass(isActive)}
+                end
               >
                 Dashboard
-              </Link>
-              <Link
+              </NavLink>
+              <NavLink
                 to="/dashboard/upload"
-                className="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700"
+                className={({ isActive }) => getMobileNavLinkClass(isActive)}
               >
                 Upload
-              </Link>
+              </NavLink>
+              <NavLink
+                to="/dashboard/summaries"
+                className={({ isActive }) => getMobileNavLinkClass(isActive)}
+              >
+                Summaries
+              </NavLink>
             </div>
             <div className="border-t border-gray-200 pb-3 pt-4">
               <div className="px-4 py-2">
