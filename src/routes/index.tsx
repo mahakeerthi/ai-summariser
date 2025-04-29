@@ -4,6 +4,7 @@ import SignUp from '../components/auth/SignUp';
 import Dashboard from '../components/dashboard/Dashboard';
 import Upload from '../components/dashboard/Upload';
 import Summaries from '../components/dashboard/Summaries';
+import PromptLibrary from '../components/dashboard/PromptLibrary';
 import { getCurrentUser } from '../utils/storage';
 
 // Protected Route wrapper
@@ -70,6 +71,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Summaries />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dashboard/prompt-library',
+    element: (
+      <ProtectedRoute>
+        <PromptLibrary />
       </ProtectedRoute>
     ),
   },

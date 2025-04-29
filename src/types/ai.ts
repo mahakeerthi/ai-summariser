@@ -1,10 +1,23 @@
 export type AIProvider = 'openai' | 'anthropic' | 'google';
 
+export interface PromptOption {
+  label: string;
+  value: string;
+  description?: string;
+}
+
 export interface PromptTemplate {
+  id: string;
   name: string;
   description: string;
   template: string;
-  customizable?: boolean;
+  customizable: boolean;
+  isSystemTemplate: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  category?: string;
+  options?: PromptOption[];
+  defaultOptions?: PromptOption[];
 }
 
 export interface CustomPromptOptions {
@@ -13,12 +26,13 @@ export interface CustomPromptOptions {
 }
 
 export interface SummarizationOptions {
-  provider: AIProvider;
+  provider: string;
+  format?: string;
   maxLength?: number;
-  format?: 'financial' | 'academic' | 'technical' | 'paragraph';
   language?: string;
   temperature?: number;
-  promptTemplate?: CustomPromptOptions;
+  apiKey?: string;
+  template?: string;
 }
 
 export interface SummarizationResult {

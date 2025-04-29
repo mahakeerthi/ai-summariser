@@ -1,12 +1,14 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../layout/DashboardLayout';
 import { useFileUpload } from '../../../hooks/useFileUpload';
 import { useSummarization } from '../../../hooks/useSummarization';
 import { useSummaryStorage } from '../../../hooks/useSummaryStorage';
-import { SummarizationOptions } from '../../../types/ai';
+import { useAPIKeys } from '../../../hooks/useAPIKeys';
+import { SummarizationOptions, AIProvider, PromptTemplate } from '../../../types/ai';
 import { PROMPT_TEMPLATES } from '../../../services/ai/promptTemplates';
 import MarkdownRenderer from '../../common/MarkdownRenderer';
+import APIKeyManager from '../../common/APIKeyManager';
 
 type FormatType = NonNullable<SummarizationOptions['format']>;
 
@@ -14,8 +16,26 @@ const Upload: React.FC = () => {
   const navigate = useNavigate();
   const { addSummary } = useSummaryStorage();
   
+  // Get all available templates (system + custom)
+  const [availableTemplates, setAvailableTemplates] = useState<PromptTemplate[]>([]);
+  
+  useEffect(() => {
+    // Load templates from localStorage and combine with system templates
+    const loadTemplates = () => {
+      const storedTemplates = JSON.parse(localStorage.getItem('customPromptTemplates') || '[]');
+      const systemTemplates = Object.entries(PROMPT_TEMPLATES).map(([id, template]) => ({
+        ...template,
+        id,
+        isSystemTemplate: true,
+      }));
+      setAvailableTemplates([...systemTemplates, ...storedTemplates]);
+    };
+
+    loadTemplates();
+  }, []);
+
   // Get the first available template key for default
-  const defaultFormat = Object.keys(PROMPT_TEMPLATES)[0] as FormatType;
+  const defaultFormat = availableTemplates.length > 0 ? availableTemplates[0].id : '';
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const {
@@ -42,16 +62,25 @@ const Upload: React.FC = () => {
     reset: resetSummary,
   } = useSummarization();
 
+  const {
+    apiKeys,
+    isAPIKeyManagerOpen,
+    openAPIKeyManager,
+    closeAPIKeyManager,
+    handleSaveAPIKeys,
+    hasValidAPIKey,
+  } = useAPIKeys();
+
   // Add error state for summary storage
   const [storageError, setStorageError] = useState<string | null>(null);
 
   // Type guard for format validation
-  const isValidFormat = (format: string): format is FormatType => {
-    return format in PROMPT_TEMPLATES;
+  const isValidFormat = (format: string): format is string => {
+    return availableTemplates.some(template => template.id === format);
   };
 
   // Get the stored format from localStorage or use default
-  const getStoredFormat = (): FormatType => {
+  const getStoredFormat = (): string => {
     const storedFormat = localStorage.getItem('selectedFormat');
     return (storedFormat && isValidFormat(storedFormat)) ? storedFormat : defaultFormat;
   };
@@ -66,18 +95,62 @@ const Upload: React.FC = () => {
 
   const [selectedTemplateDescription, setSelectedTemplateDescription] = useState<string>(() => {
     const format = getStoredFormat();
-    return PROMPT_TEMPLATES[format].description;
+    const template = availableTemplates.find(t => t.id === format);
+    return template?.description || '';
   });
+
+  // Filter available providers based on valid API keys
+  const getAvailableProviders = () => {
+    return availableProviders.filter(provider => 
+      hasValidAPIKey(provider as keyof typeof apiKeys)
+    );
+  };
+
+  // Update summary options when providers change
+  const validProviders = getAvailableProviders();
+  
+  // Set the first available provider as default if current provider is not valid
+  useEffect(() => {
+    const currentProvider = summaryOptions.provider as AIProvider;
+    if (validProviders.length > 0 && !validProviders.includes(currentProvider)) {
+      setSummaryOptions(prev => ({
+        ...prev,
+        provider: validProviders[0],
+      }));
+    }
+  }, [validProviders, summaryOptions.provider]);
 
   const handleSummarize = async () => {
     if (!chunks || !file) return;
+
+    // Check if we have any templates available
+    if (availableTemplates.length === 0) {
+      setStorageError('Please create at least one template in the Prompt Library before generating a summary.');
+      return;
+    }
+
+    // Check if we have a valid API key for the selected provider
+    if (!hasValidAPIKey(summaryOptions.provider as keyof typeof apiKeys)) {
+      openAPIKeyManager();
+      return;
+    }
     
     try {
       // Reset any previous errors
       setStorageError(null);
       
+      // Get the selected template
+      const selectedTemplate = availableTemplates.find(t => t.id === summaryOptions.format);
+      if (!selectedTemplate) {
+        throw new Error('Selected template not found');
+      }
+
       // Generate the summary and get the result directly
-      const summaryResult = await summarize(chunks, summaryOptions);
+      const summaryResult = await summarize(chunks, {
+        ...summaryOptions,
+        template: selectedTemplate.template,
+        apiKey: apiKeys[summaryOptions.provider as keyof typeof apiKeys],
+      });
       
       // Prepare the summary data
       const summaryData = {
@@ -91,17 +164,15 @@ const Upload: React.FC = () => {
           provider: summaryResult.provider,
           model: summaryResult.model,
           tokensUsed: summaryResult.tokensUsed,
+          templateUsed: selectedTemplate.name,
         },
       };
       
-      console.log('Attempting to store summary:', summaryData);
-      
       // Store the summary
       await addSummary(summaryData);
-      console.log('Summary stored successfully');
 
-      // Navigate to summaries page with correct path
-      // navigate('/dashboard/summaries');
+      // Navigate to summaries page
+      navigate('/dashboard/summaries');
     } catch (error) {
       console.error('Failed to generate or store summary:', error);
       setStorageError(error instanceof Error ? error.message : 'An error occurred while processing your request');
@@ -115,7 +186,8 @@ const Upload: React.FC = () => {
   const handleFormatChange = (format: string) => {
     if (isValidFormat(format)) {
       handleOptionChange('format', format);
-      setSelectedTemplateDescription(PROMPT_TEMPLATES[format].description);
+      const template = availableTemplates.find(t => t.id === format);
+      setSelectedTemplateDescription(template?.description || '');
       localStorage.setItem('selectedFormat', format);
     }
   };
@@ -304,37 +376,68 @@ const Upload: React.FC = () => {
                     <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <label className="block text-sm font-medium text-gray-700">AI Provider</label>
-                        <select
-                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-black focus:border-black sm:text-sm rounded-md"
-                          value={summaryOptions.provider}
-                          onChange={(e) => handleOptionChange('provider', e.target.value)}
-                        >
-                          {availableProviders.map(provider => (
-                            <option key={provider} value={provider}>
-                              {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="mt-1 relative">
+                          {validProviders.length > 0 ? (
+                            <select
+                              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-black focus:border-black sm:text-sm rounded-md"
+                              value={summaryOptions.provider}
+                              onChange={(e) => handleOptionChange('provider', e.target.value)}
+                            >
+                              {validProviders.map(provider => (
+                                <option key={provider} value={provider}>
+                                  {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm text-gray-500">No API keys configured</p>
+                              <button
+                                onClick={openAPIKeyManager}
+                                className="text-sm text-blue-500 hover:text-blue-600"
+                              >
+                                Configure API Keys
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Format</label>
-                        <select
-                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-black focus:border-black sm:text-sm rounded-md"
-                          value={summaryOptions.format}
-                          onChange={(e) => handleFormatChange(e.target.value)}
-                        >
-                          {Object.entries(PROMPT_TEMPLATES).map(([key, template]) => (
-                            <option key={key} value={key}>
-                              {template.name}
-                            </option>
-                          ))}
-                        </select>
-                        {/* {selectedTemplateDescription && (
-                          <p className="mt-2 text-sm text-gray-500">
-                            {selectedTemplateDescription}
-                          </p>
-                        )} */}
+                        {availableTemplates.length === 0 ? (
+                          <div className="mt-2">
+                            <p className="text-sm text-red-600">
+                              No templates available. Please create a template in the{' '}
+                              <button
+                                onClick={() => navigate('/dashboard/prompt-library')}
+                                className="text-black underline hover:text-gray-900"
+                              >
+                                Prompt Library
+                              </button>
+                              .
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            <select
+                              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-black focus:border-black sm:text-sm rounded-md"
+                              value={summaryOptions.format}
+                              onChange={(e) => handleFormatChange(e.target.value)}
+                            >
+                              {availableTemplates.map((template) => (
+                                <option key={template.id} value={template.id}>
+                                  {template.name} {template.isSystemTemplate ? '(System)' : ''}
+                                </option>
+                              ))}
+                            </select>
+                            {selectedTemplateDescription && (
+                              <p className="mt-2 text-sm text-gray-500">
+                                {selectedTemplateDescription}
+                              </p>
+                            )}
+                          </>
+                        )}
                       </div>
 
                       <div>
@@ -442,6 +545,13 @@ const Upload: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Add APIKeyManager component */}
+      <APIKeyManager
+        isOpen={isAPIKeyManagerOpen}
+        onClose={closeAPIKeyManager}
+        onSave={handleSaveAPIKeys}
+      />
     </DashboardLayout>
   );
 };

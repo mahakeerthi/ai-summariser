@@ -66,6 +66,12 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 >
                   Summaries
                 </NavLink>
+                <NavLink
+                  to="/dashboard/prompt-library"
+                  className={({ isActive }) => getNavLinkClass(isActive)}
+                >
+                  Prompt Library
+                </NavLink>
               </div>
             </div>
 
@@ -152,6 +158,12 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 className={({ isActive }) => getMobileNavLinkClass(isActive)}
               >
                 Summaries
+              </NavLink>
+              <NavLink
+                to="/dashboard/prompt-library"
+                className={({ isActive }) => getMobileNavLinkClass(isActive)}
+              >
+                Prompt Library
               </NavLink>
             </div>
             <div className="border-t border-gray-200 pb-3 pt-4">
