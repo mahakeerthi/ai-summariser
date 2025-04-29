@@ -8,6 +8,7 @@ interface UseSummaryStorageReturn {
   addSummary: (summary: Omit<StoredSummary, 'id' | 'createdAt'>) => Promise<void>;
   deleteSummary: (id: string) => Promise<void>;
   refreshSummaries: () => Promise<void>;
+  getSummary: (id: string) => Promise<StoredSummary | undefined>;
 }
 
 export const useSummaryStorage = (): UseSummaryStorageReturn => {
@@ -48,6 +49,15 @@ export const useSummaryStorage = (): UseSummaryStorageReturn => {
     }
   }, [refreshSummaries]);
 
+  const getSummary = useCallback(async (id: string) => {
+    try {
+      return await summaryStorage.getSummary(id);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch summary'));
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     refreshSummaries();
   }, [refreshSummaries]);
@@ -59,5 +69,6 @@ export const useSummaryStorage = (): UseSummaryStorageReturn => {
     addSummary,
     deleteSummary,
     refreshSummaries,
+    getSummary,
   };
 }; 
